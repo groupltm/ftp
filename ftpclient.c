@@ -1,6 +1,5 @@
 
 
-/*FTP Client*/
  
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,7 +18,7 @@
 #include<fcntl.h>
 
 
-#define PORT 21
+#define PORT 20
 
 struct sockaddr_in dataChannel;
 
@@ -203,18 +202,17 @@ int main(int argc,char *argv[])
 	dataChannel.sin_addr.s_addr=inet_addr(ip);
 	memset(dataChannel.sin_zero, '\0', sizeof dataChannel.sin_zero);
 	
-	int welcomeSocket = socket(AF_INET, SOCK_STREAM, 0);
-	bind(welcomeSocket, (struct sockaddr *) &dataChannel, sizeof(struct sockaddr));
+	struct sockaddr_storage serverStorage;
+	socklen_t addr_size = sizeof serverStorage;
+	int listenSock = socket(AF_INET, SOCK_STREAM, 0);
+	bind(listenSock, (struct sockaddr *) &dataAddr, sizeof(struct sockaddr));
 	
 	memset(buf, 0, sizeof buf);
 	sprintf(buf,"LIST\r\n");
 	tmpres = send(sock, buf, strlen(buf), 0);
 	
-	listen(welcomeSocket,5);
-	
-	struct sockaddr_storage serverStorage;
-	socklen_t addr_size = sizeof serverStorage;
-	dataSock = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size);
+	listen(listenSock,5);
+	dataSock = accept(listenSock, (struct sockaddr *) &serverStorage, &addr_size);
 	
 	memset(buf, 0, sizeof buf);
 	tmpres = recv(dataSock, buf, BUFSIZ, 0);
