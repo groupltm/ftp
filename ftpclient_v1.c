@@ -76,11 +76,20 @@ void ModePassive()
 	
 	//Calc port
 	temp = strtok(buf,"(");
-	for(int i=0;i<5;i++){
+	/*(int i=0;i<5;i++){
 		temp = strtok(NULL,",");
 		if (i == 4)
 			strcpy(s1,temp);
-	}
+	}*/
+	
+	int i=0;
+	do {
+		temp = strtok(NULL,",");
+		if (i == 4)
+			strcpy(s1,temp);
+		i++;
+	}while(i<5);
+	
 	temp = strtok(NULL,")");
 	strcpy(s2,temp);
 
@@ -111,11 +120,19 @@ void ModeActive()
 	x1 = rand() % 200 + 1;
 	x2 = rand() % 200 + 1;
 	
-	for(int i=0; i<16; i++)
+	/*for(int i=0; i<16; i++)
+		if(ip[i] != '.')
+			temp[i] = ip[i];
+		else
+			temp[i] = ',';*/
+	int i=0;	
+	do {
 		if(ip[i] != '.')
 			temp[i] = ip[i];
 		else
 			temp[i] = ',';
+		i++;
+	}while(i<16);
 	
 	memset(buf, 0, sizeof buf);
 	sprintf(buf,"PORT %s,%d,%d\r\n",temp,x1,x2);
