@@ -126,7 +126,6 @@ void ModeActive()
 	puts(buf);
 	
 	dataPort = x1 * 256 + x2;
-	printf("%d\n",dataPort);
 	
 	dataAddr.sin_port=htons(dataPort);
 	
@@ -152,7 +151,6 @@ void Accept()
 void CmdLineHandle(char* cmdLine)
 {
 	char* temp = strtok(cmdLine," ");
-	puts(cmdLine);
 	//passive
 	if (strcmp(temp,"passive") == 0)
 	{
@@ -161,8 +159,10 @@ void CmdLineHandle(char* cmdLine)
 			strcpy(mode,"on");
 			puts("Passive mode on!");
 		}
-		else
+		else {
 			strcpy(mode,"off");
+			puts("Passive mode off!");
+		}
 	}
 	//ls
 	else if (strcmp(temp,"ls") == 0)
