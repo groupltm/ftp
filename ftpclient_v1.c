@@ -76,7 +76,7 @@ void ModePassive()
 	
 	//Calc port
 	temp = strtok(buf,"(");
-	/*for(int i=0;i<5;i++){
+	/*(int i=0;i<5;i++){
 		temp = strtok(NULL,",");
 		if (i == 4)
 			strcpy(s1,temp);
