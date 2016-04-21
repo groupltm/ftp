@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <dirent.h>
  
 /*for getting file size using stat()*/
 #include<sys/stat.h>
@@ -25,6 +27,7 @@ int cmdSock, dataSock;
 char mode[4];
 char buf[BUFSIZ+1];
 char ip[16];
+char localAddress[1024];
 struct sockaddr_storage serverStorage;
 socklen_t addr_size = sizeof serverStorage;
 int listenSock;
@@ -76,11 +79,20 @@ void ModePassive()
 	
 	//Calc port
 	temp = strtok(buf,"(");
-	for(int i=0;i<5;i++){
+	/*(int i=0;i<5;i++){
 		temp = strtok(NULL,",");
 		if (i == 4)
 			strcpy(s1,temp);
-	}
+	}*/
+	
+	int i=0;
+	do {
+		temp = strtok(NULL,",");
+		if (i == 4)
+			strcpy(s1,temp);
+		i++;
+	}while(i<5);
+	
 	temp = strtok(NULL,")");
 	strcpy(s2,temp);
 
@@ -111,11 +123,19 @@ void ModeActive()
 	x1 = rand() % 200 + 1;
 	x2 = rand() % 200 + 1;
 	
-	for(int i=0; i<16; i++)
+	/*for(int i=0; i<16; i++)
+		if(ip[i] != '.')
+			temp[i] = ip[i];
+		else
+			temp[i] = ',';*/
+	int i=0;	
+	do {
 		if(ip[i] != '.')
 			temp[i] = ip[i];
 		else
 			temp[i] = ',';
+		i++;
+	}while(i<16);
 	
 	memset(buf, 0, sizeof buf);
 	sprintf(buf,"PORT %s,%d,%d\r\n",temp,x1,x2);
@@ -149,23 +169,44 @@ void Accept()
 		dataSock = accept(listenSock, (struct sockaddr *) &serverStorage, &addr_size);
 }
 
+/*
+char* GetValue(char* cmdLine)
+{
+	char* value = strstr(cmdLine, " ");
+	if (value != NULL)
+	{
+		printf("ok\n");
+		value += 1;
+	}
+	
+	printf("%s\n", cmdLine);
+	
+	return value;
+}
+*/
+
 void CmdLineHandle(char* cmdLine)
 {
+	cmdLine[strlen(cmdLine) - 1] = '\0';
+	
 	char* temp = strtok(cmdLine," ");
-	puts(cmdLine);
+	
 	//passive
-	if (strcmp(temp,"passive") == 0)
+	if (strcmp(cmdLine,"passive") == 0)
 	{
 		if (strcmp(mode,"off") == 0)
 		{
 			strcpy(mode,"on");
 			puts("Passive mode on!");
 		}
-		else
+		else {
 			strcpy(mode,"off");
+			puts("Passive mode off!");
+		}
 	}
+	
 	//ls
-	else if (strcmp(temp,"ls") == 0)
+	else if (strcmp(cmdLine,"ls") == 0)
 	{
 		CheckMode();
 				
@@ -174,7 +215,7 @@ void CmdLineHandle(char* cmdLine)
 		send(cmdSock, buf, strlen(buf), 0);
 		
 		Accept();
-	
+		
 		memset(buf, 0, sizeof buf);
 		recv(cmdSock, buf, BUFSIZ, 0);
 		puts(buf);
@@ -195,6 +236,72 @@ void CmdLineHandle(char* cmdLine)
 		recv(cmdSock, buf, BUFSIZ, 0);
 		puts(buf);
 	}
+	
+	//cd
+	else if (strcmp(cmdLine, "cd") == 0)
+	{
+		memset(buf, 0, sizeof buf);
+		char* value = strtok(NULL, " ");
+		if (value != NULL)
+		{
+			sprintf(buf,"CWD %s\r\n", value);
+			send(cmdSock, buf, strlen(buf), 0);
+			recv(cmdSock, buf, BUFSIZ, 0);
+			puts(buf);
+		}
+		
+	}
+	
+	//delete
+	else if (strcmp(cmdLine, "delete") == 0)
+	{
+		memset(buf, 0, sizeof buf);
+		char* value = strtok(NULL, " ");
+		if (value != NULL)
+		{
+			sprintf(buf,"DELE %s\r\n", value);
+			send(cmdSock, buf, strlen(buf), 0);
+			recv(cmdSock, buf, BUFSIZ, 0);
+			puts(buf);
+		}
+		
+	}
+	
+	//mkdir
+	else if (strcmp(cmdLine, "mkdir") == 0)
+	{
+		memset(buf, 0, sizeof buf);
+		char* value = strtok(NULL, " ");
+		if (value != NULL)
+		{
+			sprintf(buf,"MKD %s\r\n", value);
+			send(cmdSock, buf, strlen(buf), 0);
+			recv(cmdSock, buf, BUFSIZ, 0);
+			puts(buf);
+		}
+		
+	}
+	
+	//lcd
+	else if (strcmp(cmdLine, "lcd") == 0)
+	{
+		char* value = strtok(NULL, " ");
+		if (value != NULL)
+		{
+			DIR* dir = opendir(value);
+			if (dir)
+			{
+				memset(localAddress, 0, sizeof localAddress);		
+				strcpy(localAddress, value);
+				printf("Local directory: %s\n\n", localAddress);
+			}
+			else
+			{
+				printf("Failed to change local directory\n\n");
+			}	
+			
+		}	
+	}
 }
  
 int main(int argc,char *argv[])
@@ -202,6 +309,9 @@ int main(int argc,char *argv[])
 	int tmpres;
 	char cmdLine[1024];
 	status = 0;
+	
+	//get current directory
+	getcwd(localAddress, sizeof localAddress);
 	
 	//Create socket	
 	strcpy(ip,argv[1]);
@@ -253,7 +363,7 @@ int main(int argc,char *argv[])
 		char info[50];
 		printf("Name (%s): ", ip);
 		memset(buf, 0, sizeof buf);
-		scanf("%s", info);
+		fgets (info, sizeof info, stdin);
 
 		sprintf(buf,"USER %s\r\n",info);
 		tmpres = send(cmdSock, buf, strlen(buf), 0);
@@ -273,7 +383,7 @@ int main(int argc,char *argv[])
 		memset(info, 0, sizeof info);
 		printf("Password: ");
 		memset(buf, 0, sizeof buf);
-		scanf("%s", info);
+		fgets (info, sizeof info, stdin);
 
 		sprintf(buf,"PASS %s\r\n",info);
 		tmpres = send(cmdSock, buf, strlen(buf), 0);
@@ -292,9 +402,10 @@ int main(int argc,char *argv[])
 	}
 	strcpy(mode,"off");
 	do {
+	memset(cmdLine, 0, sizeof cmdLine);
 	printf("ftp>");
 	fflush(stdin);
-	scanf("%s",cmdLine);
+	fgets (cmdLine, 1024, stdin);
 	CmdLineHandle(cmdLine);
 	}while(status == 0);
 	/*flush(stdin);
