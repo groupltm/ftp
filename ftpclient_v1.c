@@ -270,7 +270,7 @@ int main(int argc,char *argv[])
 		char info[50];
 		printf("Name (%s): ", ip);
 		memset(buf, 0, sizeof buf);
-		scanf("%s", info);
+		gets(info);
 
 		sprintf(buf,"USER %s\r\n",info);
 		tmpres = send(cmdSock, buf, strlen(buf), 0);
@@ -290,7 +290,7 @@ int main(int argc,char *argv[])
 		memset(info, 0, sizeof info);
 		printf("Password: ");
 		memset(buf, 0, sizeof buf);
-		scanf("%s", info);
+		gets(info);
 
 		sprintf(buf,"PASS %s\r\n",info);
 		tmpres = send(cmdSock, buf, strlen(buf), 0);
